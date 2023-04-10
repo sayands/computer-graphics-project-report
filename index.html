@@ -48,271 +48,6 @@
   </div>
 </div>
 
-<div class="container contentWrapper">
-  <div class="pageContent">
-  <h2> Ankita Ghosh </h2>
-    <h2> Graded Feature Implementation </h2>
-
-    <h3> Images as Textures </h3>
-        Relevant files: <br />
-        <code>
-            lodepng.cpp <br />
-            lodepng.h <br />
-            imagetexture.cpp <br />
-        </code>
-        <br />
-        I implemented the images as texture feature using the  <code>lodepng</code> library by adding <code>lodepng.cpp</code> and <lodepng.h>
-        files which makes using PNG images very easy and lightweight.
-        I referred to the lecture [1] on texture mapping which helped me understand the concept.
-        In <code>imagetexture.cpp</code>, for a given pair of \((u,v)\) coordinates, I return the \((r,g,b)\) values present at the \((x,y)\) location of my texture map as the albedo. To ensure right albedo value is sent,
-        I scale the \((u,v)\) coordinates according to the height and width of the texture map. Additionally, I apply inverse gamma
-        correction so that the original colour of the texture is retained. Below, I show a comparison between the results obtained from
-        my texture mapping and from Mitsuba. <br /> <br />
-        <div class="twentytwenty-container">
-            <img src="images/imagetexture/imagetexturePlane.png" alt="Mine" class="img-responsive" />
-            <img src="images/imagetexture/imagetexturePlaneMitsuba.png" alt="Mitsuba" class="img-responsive" />
-        </div> <br />
-        These are the results obtained on using images as textures on different objects. <br /><br />
-        <p style="margin-left:10em">
-            <img src="images/imagetexture/imagetextureSphere.png" alt="Texture on other objects" /><br /><br />
-    
-    <h3> Normal Mapping </h3>
-      Relevant files: <br />
-      <code> normaltexture.cpp </code> <br />
-      <code> bsdf.h </code> <br />
-      <code> mesh.cpp </code> <br />
-      <code> sphere.cpp </code> <br />
-      <code> diffuse.cpp </code> <br />
-      <br />
-      Implementation of the normal mapping builds on the steps of using images as textures. It helps us add wrinkles and folds
-      to the object through texture, even when they are not present in the object geometry. I gathered knowledge about this topic
-      from the PBR [2] textbook. For doing this, we require
-      normal maps which represent the surface normals of the texture through RGB values. My <code>normaltexture.cpp</code>
-      code implements texturing mapping. I add functions in <code>bsdf.h</code> and <code>diffuse.cpp</code> which check if the
-      texture has a normal map. If present, I linearly transform the color channels of the normal map from \([0,1]\) range to
-      \([-1,1]\) range into a normal vector by multiplying with \(2 * value -1\). This computation is done in the
-      <code>setHitInformation</code> function of the <code>mesh.cpp</code> and <code>sphere.cpp</code>.
-      Below are two comparisons on the effect of normal mapping. I show the texture, the normals mapped on a plane surface and
-      the texture and normal combined. <br /><br />
-
-      <div class="twentytwenty-container">
-          <img src="images/bumpmap/normaltexturePlaneTex.png" alt="Texture" class="img-responsive" />
-          <img src="images/bumpmap/normaltexturePlaneNorm.png" alt="Normal" class="img-responsive" />
-          <img src="images/bumpmap/normaltexturePlaneBump.png" alt="Bump Mapping" class="img-responsive" />
-      </div> <br />
-
-      <div class="twentytwenty-container">
-          <img src="images/bumpmap/normaltextureSphereTex.png" alt="Texture" class="img-responsive" />
-          <img src="images/bumpmap/normaltextureSphereNorm.png" alt="Normal" class="img-responsive" />
-          <img src="images/bumpmap/normaltextureSphereBump.png" alt="Bump Mapping" class="img-responsive" />
-      </div> <br />
-    
-    <h3> Probabilistic Progressive Photon Mapping</h3>
-      Relevant files: <br />
-      <code> progressivephotonmap.cpp </code> <br />
-      <code>integrator.h</code> <br />
-      <code> render.cpp </code> <br />
-      <br />
-      The lecture slides and research paper [3] on this topic helped me understand how to implement probabilistic progressive photon mapping.
-      To implement it, I first make addition of two new functions to the
-      <code>integrator.h</code>: first, <code>getNumIters</code> so that I can access the number of iterations provided by the XML file,
-      and second <code>iteration</code>, to clear the old photon map and build a new photon map for every iteration and also update
-      the value of the radius for the new iteration according to the equation \( r_{i+1} = \sqrt{\frac{i+\alpha}{i+1}} r_i \). In the
-      <code>render.cpp</code> file, I add an outer loop over the loop of sampling. This loops gets the value of iterations it needs
-      to run from <code>getNumIters</code>. Inside this loop, before the smapling loop starts, I call the <code>iteration</code>
-      function. Since Nori does running average, we do not need to implement that step and can view the final output directly.
-      <br /><br />
-      In the renderer, I clear out the stored image block after every iteration just for visualization purposes so that we
-      can see the results obtained in each iteration. I use only 10% of the number of photons used for cbox photon mapping from 
-      Programming Assignment 4 and 32 spp.
-      These are shown below along with the value of radius at those iterations.
-      (This line is then commented out while doing the running average.)
-      <br /><br />
-
-      <div class="twentytwenty-container">
-          <img src="images/pppm/pppm1.png" alt="Iteration 1 (Radius = 0.10)" class="img-responsive" />
-          <img src="images/pppm/pppm10.png" alt="Iteration 10 (Radius = 0.078) " class="img-responsive" />
-          <img src="images/pppm/pppm100.png" alt="Iteration 100 (Radius = 0.054)" class="img-responsive" />
-          <img src="images/pppm/pppm500.png" alt="Iteration 500 (Radius = 0.041)" class="img-responsive" />
-      </div> <br />
-
-      Here I compare the results obtained by probabilistic progressive photon mapping (PP PMap) against normal
-      photon mapping (PMap) and path importance sampling (Path MIS). The PP PMap performs significantly better than
-      Path MIS. If we look closely at the edges and dielectric spheres, PP PMap performs better than PMap too.
-      <br /> <br />
-      <div class="twentytwenty-container">
-          <img src="images/pppm/cbox_path_mis.png" alt="Path MIS" class="img-responsive" />
-          <img src="images/pppm/cbox_pmap.png" alt="PMap" class="img-responsive" />
-          <img src="images/pppm/pppmfinal.png" alt="PP PMap" class="img-responsive" />
-      </div> <br />
-    <h3> Environment Map Emitter</h3>
-      Relevant files: <br />
-      <code>
-          envmap.cpp
-      </code> <br /> <br />
-
-      For implementing the environment map emitter, I follow the directions and pseudocode provided in the research paper [6].
-      First I created a function from the image map by obtaining the luminance value. The marignal density and conditional density
-      are obtained using the <code>precompute</code> functions given in the paper. The <code>sample</code> functions not only return
-      \(u,v\) coordinate values but also calculate probability density values. The probability density value are then converted to
-      one expressed in terms of solid angle on the sphere by introducing a Jacobian term. I map the \((u, v)\) sample to \((\theta, \phi) \) on the unit sphere by
-      scaling it and then calculate the direction \((x, y, z)\) using it. I also perform bilinear interpolation to improve the output of the
-      environment map. Since my environment map is attached to a sphere emitter, I do not need to handle anything additionally for <code>path_mis</code>
-      as my implementation already accounts for mesh emitters.
-      <br /> <br />
-      I validate my implementation using the same scene to compare my render against Mitsuba. In the scene, I have placed a dielectric
-      sphere, a diffuse sphere and a mirror sphere.
-      <br /><br />
-
-      <div class="twentytwenty-container">
-          <img src="images/environmentmap/envmap.png" alt="Mine" class="img-responsive" />
-          <img src="images/environmentmap/envmapMitsuba.png" alt="Mitsuba" class="img-responsive" />
-      </div> <br />
-    
-    <h3>Disney BSDF </h3>
-      Relevant files:
-      <br />
-      <code>
-          disney_BSDF.cpp <br />
-          warp.h <br />
-          warp.cpp <br />
-          warptest.cpp <br />
-      </code>
-      <br /> <br />
-
-      Disney BRDF gives a great range of flexibility which is why I took interest in implementing this feature. I referred to the
-      paper [4] and the code provided by them for understanding the topic and its implementation.
-      I implemented the subsurface, metallic,  specular, specularTint, roughness, clearcoat and clearcoatGloss parameters, omitting sheen and
-      anisotropic effects. There exist several small variants to the diffuse and specularity implementation, which comes due to 
-      artist preference as stated in the paper. To describe the specular lobes we need two variants of the Generalized-Trowbridge-Reit
-      distribution (or GTR), one for the specularity term (GTR2) and another one for the clearcoat term (GTR1). The functions to perform
-      <code>SquareToGRT1</code> and <code>SquareToGTR2</code> and their corresponding PDFs are added to the <code>warp.h</code> and
-      <code>warp.cpp</code> files. I validate these, which are shown at the end of this section, and hence make required changes to
-      <code>warptest.cpp</code>. The implementation of the Disney BSDF is done in the <code>disney_BSDF.cpp</code> file.
-      
-      
-      <br /><br />
-      Below each row varies one parameter while keeping the others constant. <br />
-      The parameters varied row-wise are as follows: <br />
-      <ol>
-          <li> Subsurface </li>
-          <li> Metallic </li>
-          <li> Specular </li>
-          <li> Specular Tint </li>
-          <li> Roughness </li>
-          <li> Clearcoat </li>
-          <li> ClearcoatGloss </li>
-      </ol>
-      <br />
-      </p>
-        <p style="margin-left:6em">
-            <strong>
-                0 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-                0.2 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-                0.4 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-                0.6 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-                0.8 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-                1
-            </strong>
-
-        </p>
-
-    <p style="margin-left:0.85em">
-        <img src="images/disney/disneyBSDF/subsurface/disney_subsurface_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/metallic/disney_metallic_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/specular/disney_specular_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/specular/disney_specular_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/specular/disney_specular_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/specular/disney_specular_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/specular/disney_specular_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/specular/disney_specular_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/specularTint/disney_specularTint_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/roughness/disney_roughness_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_5.png" width=175 height=175 alt="1.0" />
-        <br />
-        <br />
-
-        Since the visualization for subsurface and clearcoatGloss parameters are not evident in the comparison above, I have provided
-        more comparisons below to ensure that my parameters are validated sufficiently.
-        <br /> <br />
-        <div class="twentytwenty-container">
-            <img src="images/disney/Extra/wall0.png" alt="subsurface=0.0" class="img-responsive" />
-            <img src="images/disney/Extra/wsub1.png" alt="subsurface=1.0" class="img-responsive" />
-        </div>
-        <br />
-        <div class="twentytwenty-container">
-            <img src="images/disney/Extra/all0.png" alt="clearcoat=0.0, clearcoatGloss=0.0" class="img-responsive" />
-            <img src="images/disney/Extra/cc1.png" alt="clearcoat=1.0, clearcoatGloss=0.0" class="img-responsive" />
-            <img src="images/disney/Extra/cc1cg1.png" alt="clearcoat=1.0, clearcoatGloss=1.0" class="img-responsive" />
-        </div>
-        <br />
-
-        Comparing DisneyBSDF with an existing implementation is very difficult since the principled BSDF implementation has
-        differences for majority renderers. Since I have been comparing my results with Mitsuba for the project, I did the same for
-        this feature too. Upon looking closely into Mitsuba's implementation I came to realise that their implementation of
-        Principled BSDF is in such a way that it creates a certain difference in the albedo of the object. The scenes do not match
-        exactly, however, they serve as a good reference is showing that the parameters get applied in a similar fashion. I provide
-        two comparisons of applying my parameters with different values on Nori and Mitsuba.
-        <br /><br />
-        <div class="twentytwenty-container">
-            <img src="images/disney/Mitsuba/Disneycbox1.png" alt="Scene 1 (Mine)" class="img-responsive" />
-            <img src="images/disney/Mitsuba/DisneycboxMitsuba1.png" alt="Scene 1 (Mitsuba)" class="img-responsive" />
-            <img src="images/disney/Mitsuba/Disneycbox2.png" alt="Scene 2 (Mine)" class="img-responsive" />
-            <img src="images/disney/Mitsuba/DisneycboxMitsuba2.png" alt="Scene 2 (Mitsuba)" class="img-responsive" />
-        </div> <br />
-        <br />
-    </p>
-
-    Further, I have also validated the implementation of my GTR1 and GTR2 functions throught warpTest and provided
-    the warp visualization and chi2test results of both when \( \alpha=0.3\) and \( \alpha=0.8\).
-        <br /><br />
-    <div class="twentytwenty-container">
-        <img src="images/disney/Disney-Warptest/GTR1_Vis_03.png" alt="GTR1 (alpha=0.3)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR1_PDF_03.png" alt="GTR1 (alpha=0.3)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR1_Vis_08.png" alt="GTR1 (alpha=0.8)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR1_PDF_08.png" alt="GTR1 (alpha=0.8)" class="img-responsive" />
-    </div> <br />
-    <div class="twentytwenty-container">
-        <img src="images/disney/Disney-Warptest/GTR2_Vis_03.png" alt="GTR2 (alpha=0.3)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR2_PDF_03.png" alt="GTR2 (alpha=0.3)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR2_Vis_08.png" alt="GTR2 (alpha=0.8)" class="img-responsive" />
-        <img src="images/disney/Disney-Warptest/GTR2_PDF_08.png" alt="GTR2 (alpha=0.8)" class="img-responsive" />
-    </div> <br />
-  <h3> Moderate Denoising: NL-means Denoising </h3>
-    Relevant files: <br />
-    <code>
-        render.cpp <br />
-        denoise.py <br />
-    </code>
-    <br /> <br />
-
-    Non-local denoising filter performs averaging over similar pixels in the neighbourhood instead of just calculating a local mean.
-    This results in denoised outputs where edges are preseved. To implement NL-means denoising, I took reference from our
-    lecture slides [5].
-    First, I calculated and stored the variance map of the scene in <code>render.cpp</code> by using sample mean variance.
-    Then, I implemented the NL-means pipeline in the python file <code>denoise.py</code> present along with all other C++ source codes.
-    In my python code, I majorly make use of the <code>numpy</code> library for the mathematical calculations. I also use
-    <code>opencv</code> library to read the exr file and <code>scipy</code> library to perform convolution operation. I implement the
-    pseudocode present in the lecture slide and denoise two different renders of the same scene using path_mis and 128spp, and
-    path_mats and 512spp. For the paramaters, I use the values stated in the slides: \(r=10\), \(f=3\) and \(k=0.45\). The scene, the
-    variance map, and the denoised scene for both the renders are shown below.
-
-    <br /> <br />
-    <div class="twentytwenty-container">
-        <img src="images/denoise/denoiseScene_mis128.png" alt="Before Denoising (PATH MIS 128spp)" class="img-responsive" />
-        <img src="images/denoise/denoiseScene_variance_mis128.png" alt="Variance" class="img-responsive" />
-        <img src="images/denoise/denoised_mis128.png" alt="Post Denoising" class="img-responsive" />
-    </div> <br />
-
-    <div class="twentytwenty-container">
-        <img src="images/denoise/denoiseScene_mats512.png" alt="Before Denoising (Path MATS 512spp)" class="img-responsive" />
-        <img src="images/denoise/denoiseScene_variance_mats512.png" alt="Variance" class="img-responsive" />
-        <img src="images/denoise/denoised_mats512.png" alt="Post Denoising" class="img-responsive" />
-    </div> <br />
-  </div>
-</div>
 
 <div class="container contentWrapper">
   <div class="pageContent">
@@ -324,7 +59,7 @@
       standalone of nori are rendered with 1024 samples per pixel, on the euler cluster, unless stated otherwise. The 
       corresponding integrator is always set as <code>path_mis</code> unless stated otherwise.
     </p>
-      <h2> Graded Feature Implementation </h2>
+      <h2> Feature Implementation </h2>
         <h3> Advanced Camera Models </h3>
         <p> <strong>Files Added/Modified:</strong>
           <ul>
@@ -647,7 +382,6 @@
           to the transform matrix of the scene within the <code>bvh</code> class.
          </p>
       
-      <h2> Ungraded Feature Implementation </h2>
         <h3> Rendering on Euler Cluster </h3>
           <p> <strong>Files Added/Modified:</strong>
             <ul>
@@ -679,6 +413,271 @@
           <div class="collapse" id="collapseSystem">
               <pre><object data="./tests/cbox_path_mats.txt" style="width: 100%; height: 30vh"></object></pre>
           </div> <br> <br>
+          <div class="container contentWrapper">
+            <div class="pageContent">
+            <h2> Ankita Ghosh </h2>
+              <h2> Feature Implementation </h2>
+          
+              <h3> Images as Textures </h3>
+                  Relevant files: <br />
+                  <code>
+                      lodepng.cpp <br />
+                      lodepng.h <br />
+                      imagetexture.cpp <br />
+                  </code>
+                  <br />
+                  I implemented the images as texture feature using the  <code>lodepng</code> library by adding <code>lodepng.cpp</code> and <lodepng.h>
+                  files which makes using PNG images very easy and lightweight.
+                  I referred to the lecture [1] on texture mapping which helped me understand the concept.
+                  In <code>imagetexture.cpp</code>, for a given pair of \((u,v)\) coordinates, I return the \((r,g,b)\) values present at the \((x,y)\) location of my texture map as the albedo. To ensure right albedo value is sent,
+                  I scale the \((u,v)\) coordinates according to the height and width of the texture map. Additionally, I apply inverse gamma
+                  correction so that the original colour of the texture is retained. Below, I show a comparison between the results obtained from
+                  my texture mapping and from Mitsuba. <br /> <br />
+                  <div class="twentytwenty-container">
+                      <img src="images/imagetexture/imagetexturePlane.png" alt="Mine" class="img-responsive" />
+                      <img src="images/imagetexture/imagetexturePlaneMitsuba.png" alt="Mitsuba" class="img-responsive" />
+                  </div> <br />
+                  These are the results obtained on using images as textures on different objects. <br /><br />
+                  <p style="margin-left:10em">
+                      <img src="images/imagetexture/imagetextureSphere.png" alt="Texture on other objects" /><br /><br />
+              
+              <h3> Normal Mapping </h3>
+                Relevant files: <br />
+                <code> normaltexture.cpp </code> <br />
+                <code> bsdf.h </code> <br />
+                <code> mesh.cpp </code> <br />
+                <code> sphere.cpp </code> <br />
+                <code> diffuse.cpp </code> <br />
+                <br />
+                Implementation of the normal mapping builds on the steps of using images as textures. It helps us add wrinkles and folds
+                to the object through texture, even when they are not present in the object geometry. I gathered knowledge about this topic
+                from the PBR [2] textbook. For doing this, we require
+                normal maps which represent the surface normals of the texture through RGB values. My <code>normaltexture.cpp</code>
+                code implements texturing mapping. I add functions in <code>bsdf.h</code> and <code>diffuse.cpp</code> which check if the
+                texture has a normal map. If present, I linearly transform the color channels of the normal map from \([0,1]\) range to
+                \([-1,1]\) range into a normal vector by multiplying with \(2 * value -1\). This computation is done in the
+                <code>setHitInformation</code> function of the <code>mesh.cpp</code> and <code>sphere.cpp</code>.
+                Below are two comparisons on the effect of normal mapping. I show the texture, the normals mapped on a plane surface and
+                the texture and normal combined. <br /><br />
+          
+                <div class="twentytwenty-container">
+                    <img src="images/bumpmap/normaltexturePlaneTex.png" alt="Texture" class="img-responsive" />
+                    <img src="images/bumpmap/normaltexturePlaneNorm.png" alt="Normal" class="img-responsive" />
+                    <img src="images/bumpmap/normaltexturePlaneBump.png" alt="Bump Mapping" class="img-responsive" />
+                </div> <br />
+          
+                <div class="twentytwenty-container">
+                    <img src="images/bumpmap/normaltextureSphereTex.png" alt="Texture" class="img-responsive" />
+                    <img src="images/bumpmap/normaltextureSphereNorm.png" alt="Normal" class="img-responsive" />
+                    <img src="images/bumpmap/normaltextureSphereBump.png" alt="Bump Mapping" class="img-responsive" />
+                </div> <br />
+              
+              <h3> Probabilistic Progressive Photon Mapping</h3>
+                Relevant files: <br />
+                <code> progressivephotonmap.cpp </code> <br />
+                <code>integrator.h</code> <br />
+                <code> render.cpp </code> <br />
+                <br />
+                The lecture slides and research paper [3] on this topic helped me understand how to implement probabilistic progressive photon mapping.
+                To implement it, I first make addition of two new functions to the
+                <code>integrator.h</code>: first, <code>getNumIters</code> so that I can access the number of iterations provided by the XML file,
+                and second <code>iteration</code>, to clear the old photon map and build a new photon map for every iteration and also update
+                the value of the radius for the new iteration according to the equation \( r_{i+1} = \sqrt{\frac{i+\alpha}{i+1}} r_i \). In the
+                <code>render.cpp</code> file, I add an outer loop over the loop of sampling. This loops gets the value of iterations it needs
+                to run from <code>getNumIters</code>. Inside this loop, before the smapling loop starts, I call the <code>iteration</code>
+                function. Since Nori does running average, we do not need to implement that step and can view the final output directly.
+                <br /><br />
+                In the renderer, I clear out the stored image block after every iteration just for visualization purposes so that we
+                can see the results obtained in each iteration. I use only 10% of the number of photons used for cbox photon mapping from 
+                Programming Assignment 4 and 32 spp.
+                These are shown below along with the value of radius at those iterations.
+                (This line is then commented out while doing the running average.)
+                <br /><br />
+          
+                <div class="twentytwenty-container">
+                    <img src="images/pppm/pppm1.png" alt="Iteration 1 (Radius = 0.10)" class="img-responsive" />
+                    <img src="images/pppm/pppm10.png" alt="Iteration 10 (Radius = 0.078) " class="img-responsive" />
+                    <img src="images/pppm/pppm100.png" alt="Iteration 100 (Radius = 0.054)" class="img-responsive" />
+                    <img src="images/pppm/pppm500.png" alt="Iteration 500 (Radius = 0.041)" class="img-responsive" />
+                </div> <br />
+          
+                Here I compare the results obtained by probabilistic progressive photon mapping (PP PMap) against normal
+                photon mapping (PMap) and path importance sampling (Path MIS). The PP PMap performs significantly better than
+                Path MIS. If we look closely at the edges and dielectric spheres, PP PMap performs better than PMap too.
+                <br /> <br />
+                <div class="twentytwenty-container">
+                    <img src="images/pppm/cbox_path_mis.png" alt="Path MIS" class="img-responsive" />
+                    <img src="images/pppm/cbox_pmap.png" alt="PMap" class="img-responsive" />
+                    <img src="images/pppm/pppmfinal.png" alt="PP PMap" class="img-responsive" />
+                </div> <br />
+              <h3> Environment Map Emitter</h3>
+                Relevant files: <br />
+                <code>
+                    envmap.cpp
+                </code> <br /> <br />
+          
+                For implementing the environment map emitter, I follow the directions and pseudocode provided in the research paper [6].
+                First I created a function from the image map by obtaining the luminance value. The marignal density and conditional density
+                are obtained using the <code>precompute</code> functions given in the paper. The <code>sample</code> functions not only return
+                \(u,v\) coordinate values but also calculate probability density values. The probability density value are then converted to
+                one expressed in terms of solid angle on the sphere by introducing a Jacobian term. I map the \((u, v)\) sample to \((\theta, \phi) \) on the unit sphere by
+                scaling it and then calculate the direction \((x, y, z)\) using it. I also perform bilinear interpolation to improve the output of the
+                environment map. Since my environment map is attached to a sphere emitter, I do not need to handle anything additionally for <code>path_mis</code>
+                as my implementation already accounts for mesh emitters.
+                <br /> <br />
+                I validate my implementation using the same scene to compare my render against Mitsuba. In the scene, I have placed a dielectric
+                sphere, a diffuse sphere and a mirror sphere.
+                <br /><br />
+          
+                <div class="twentytwenty-container">
+                    <img src="images/environmentmap/envmap.png" alt="Mine" class="img-responsive" />
+                    <img src="images/environmentmap/envmapMitsuba.png" alt="Mitsuba" class="img-responsive" />
+                </div> <br />
+              
+              <h3>Disney BSDF </h3>
+                Relevant files:
+                <br />
+                <code>
+                    disney_BSDF.cpp <br />
+                    warp.h <br />
+                    warp.cpp <br />
+                    warptest.cpp <br />
+                </code>
+                <br /> <br />
+          
+                Disney BRDF gives a great range of flexibility which is why I took interest in implementing this feature. I referred to the
+                paper [4] and the code provided by them for understanding the topic and its implementation.
+                I implemented the subsurface, metallic,  specular, specularTint, roughness, clearcoat and clearcoatGloss parameters, omitting sheen and
+                anisotropic effects. There exist several small variants to the diffuse and specularity implementation, which comes due to 
+                artist preference as stated in the paper. To describe the specular lobes we need two variants of the Generalized-Trowbridge-Reit
+                distribution (or GTR), one for the specularity term (GTR2) and another one for the clearcoat term (GTR1). The functions to perform
+                <code>SquareToGRT1</code> and <code>SquareToGTR2</code> and their corresponding PDFs are added to the <code>warp.h</code> and
+                <code>warp.cpp</code> files. I validate these, which are shown at the end of this section, and hence make required changes to
+                <code>warptest.cpp</code>. The implementation of the Disney BSDF is done in the <code>disney_BSDF.cpp</code> file.
+                
+                
+                <br /><br />
+                Below each row varies one parameter while keeping the others constant. <br />
+                The parameters varied row-wise are as follows: <br />
+                <ol>
+                    <li> Subsurface </li>
+                    <li> Metallic </li>
+                    <li> Specular </li>
+                    <li> Specular Tint </li>
+                    <li> Roughness </li>
+                    <li> Clearcoat </li>
+                    <li> ClearcoatGloss </li>
+                </ol>
+                <br />
+                </p>
+                  <p style="margin-left:6em">
+                      <strong>
+                          0 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+                          0.2 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+                          0.4 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+                          0.6 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+                          0.8 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+                          1
+                      </strong>
+          
+                  </p>
+          
+              <p style="margin-left:0.85em">
+                  <img src="images/disney/disneyBSDF/subsurface/disney_subsurface_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/subsurface/disney_subsurface_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/metallic/disney_metallic_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/metallic/disney_metallic_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/specular/disney_specular_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/specular/disney_specular_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/specular/disney_specular_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/specular/disney_specular_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/specular/disney_specular_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/specular/disney_specular_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/specularTint/disney_specularTint_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/specularTint/disney_specularTint_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/roughness/disney_roughness_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/roughness/disney_roughness_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/clearcoat/disney_clearcoat_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_0.png" width=175 height=175 alt="0" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_1.png" width=175 height=175 alt="0.2" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_2.png" width=175 height=175 alt="0.4" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_3.png" width=175 height=175 alt="0.6" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_4.png" width=175 height=175 alt="0.8" /><img src="images/disney/disneyBSDF/clearcoatGloss/disney_clearcoatGloss_5.png" width=175 height=175 alt="1.0" />
+                  <br />
+                  <br />
+          
+                  Since the visualization for subsurface and clearcoatGloss parameters are not evident in the comparison above, I have provided
+                  more comparisons below to ensure that my parameters are validated sufficiently.
+                  <br /> <br />
+                  <div class="twentytwenty-container">
+                      <img src="images/disney/Extra/wall0.png" alt="subsurface=0.0" class="img-responsive" />
+                      <img src="images/disney/Extra/wsub1.png" alt="subsurface=1.0" class="img-responsive" />
+                  </div>
+                  <br />
+                  <div class="twentytwenty-container">
+                      <img src="images/disney/Extra/all0.png" alt="clearcoat=0.0, clearcoatGloss=0.0" class="img-responsive" />
+                      <img src="images/disney/Extra/cc1.png" alt="clearcoat=1.0, clearcoatGloss=0.0" class="img-responsive" />
+                      <img src="images/disney/Extra/cc1cg1.png" alt="clearcoat=1.0, clearcoatGloss=1.0" class="img-responsive" />
+                  </div>
+                  <br />
+          
+                  Comparing DisneyBSDF with an existing implementation is very difficult since the principled BSDF implementation has
+                  differences for majority renderers. Since I have been comparing my results with Mitsuba for the project, I did the same for
+                  this feature too. Upon looking closely into Mitsuba's implementation I came to realise that their implementation of
+                  Principled BSDF is in such a way that it creates a certain difference in the albedo of the object. The scenes do not match
+                  exactly, however, they serve as a good reference is showing that the parameters get applied in a similar fashion. I provide
+                  two comparisons of applying my parameters with different values on Nori and Mitsuba.
+                  <br /><br />
+                  <div class="twentytwenty-container">
+                      <img src="images/disney/Mitsuba/Disneycbox1.png" alt="Scene 1 (Mine)" class="img-responsive" />
+                      <img src="images/disney/Mitsuba/DisneycboxMitsuba1.png" alt="Scene 1 (Mitsuba)" class="img-responsive" />
+                      <img src="images/disney/Mitsuba/Disneycbox2.png" alt="Scene 2 (Mine)" class="img-responsive" />
+                      <img src="images/disney/Mitsuba/DisneycboxMitsuba2.png" alt="Scene 2 (Mitsuba)" class="img-responsive" />
+                  </div> <br />
+                  <br />
+              </p>
+          
+              Further, I have also validated the implementation of my GTR1 and GTR2 functions throught warpTest and provided
+              the warp visualization and chi2test results of both when \( \alpha=0.3\) and \( \alpha=0.8\).
+                  <br /><br />
+              <div class="twentytwenty-container">
+                  <img src="images/disney/Disney-Warptest/GTR1_Vis_03.png" alt="GTR1 (alpha=0.3)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR1_PDF_03.png" alt="GTR1 (alpha=0.3)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR1_Vis_08.png" alt="GTR1 (alpha=0.8)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR1_PDF_08.png" alt="GTR1 (alpha=0.8)" class="img-responsive" />
+              </div> <br />
+              <div class="twentytwenty-container">
+                  <img src="images/disney/Disney-Warptest/GTR2_Vis_03.png" alt="GTR2 (alpha=0.3)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR2_PDF_03.png" alt="GTR2 (alpha=0.3)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR2_Vis_08.png" alt="GTR2 (alpha=0.8)" class="img-responsive" />
+                  <img src="images/disney/Disney-Warptest/GTR2_PDF_08.png" alt="GTR2 (alpha=0.8)" class="img-responsive" />
+              </div> <br />
+            <h3> Moderate Denoising: NL-means Denoising </h3>
+              Relevant files: <br />
+              <code>
+                  render.cpp <br />
+                  denoise.py <br />
+              </code>
+              <br /> <br />
+          
+              Non-local denoising filter performs averaging over similar pixels in the neighbourhood instead of just calculating a local mean.
+              This results in denoised outputs where edges are preseved. To implement NL-means denoising, I took reference from our
+              lecture slides [5].
+              First, I calculated and stored the variance map of the scene in <code>render.cpp</code> by using sample mean variance.
+              Then, I implemented the NL-means pipeline in the python file <code>denoise.py</code> present along with all other C++ source codes.
+              In my python code, I majorly make use of the <code>numpy</code> library for the mathematical calculations. I also use
+              <code>opencv</code> library to read the exr file and <code>scipy</code> library to perform convolution operation. I implement the
+              pseudocode present in the lecture slide and denoise two different renders of the same scene using path_mis and 128spp, and
+              path_mats and 512spp. For the paramaters, I use the values stated in the slides: \(r=10\), \(f=3\) and \(k=0.45\). The scene, the
+              variance map, and the denoised scene for both the renders are shown below.
+          
+              <br /> <br />
+              <div class="twentytwenty-container">
+                  <img src="images/denoise/denoiseScene_mis128.png" alt="Before Denoising (PATH MIS 128spp)" class="img-responsive" />
+                  <img src="images/denoise/denoiseScene_variance_mis128.png" alt="Variance" class="img-responsive" />
+                  <img src="images/denoise/denoised_mis128.png" alt="Post Denoising" class="img-responsive" />
+              </div> <br />
+          
+              <div class="twentytwenty-container">
+                  <img src="images/denoise/denoiseScene_mats512.png" alt="Before Denoising (Path MATS 512spp)" class="img-responsive" />
+                  <img src="images/denoise/denoiseScene_variance_mats512.png" alt="Variance" class="img-responsive" />
+                  <img src="images/denoise/denoised_mats512.png" alt="Post Denoising" class="img-responsive" />
+              </div> <br />
+            </div>
+          </div>
       <h3> Final Scene </h3>
         <p> The final image was modeled using blender and was rendered on the Euler cluster at 1920x1080 resolution
           using 4096 samples per pixel, the time taken was 40 minutes.
